@@ -1,0 +1,133 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/calibration.gd" id="1_calib"]
+
+[node name="Calibration" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_calib")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Latency Calibration"
+horizontal_alignment = 1
+
+[node name="Instructions" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Press any drum pad (or keyboard) when you hear the beat.
+The system will measure your latency and adjust timing."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Press Start to begin calibration"
+horizontal_alignment = 1
+
+[node name="VisualIndicator" type="ColorRect" parent="VBoxContainer"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.3, 0.3, 0.3, 1)
+
+[node name="ProgressLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Samples: 0 / 10"
+horizontal_alignment = 1
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="OffsetContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="OffsetLabel" type="Label" parent="VBoxContainer/OffsetContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Audio Offset:"
+
+[node name="OffsetValue" type="SpinBox" parent="VBoxContainer/OffsetContainer"]
+layout_mode = 2
+min_value = -500.0
+max_value = 500.0
+step = 5.0
+suffix = " ms"
+
+[node name="MIDIOffsetContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="MIDIOffsetLabel" type="Label" parent="VBoxContainer/MIDIOffsetContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "MIDI Offset:"
+
+[node name="MIDIOffsetValue" type="SpinBox" parent="VBoxContainer/MIDIOffsetContainer"]
+layout_mode = 2
+min_value = -500.0
+max_value = 500.0
+step = 5.0
+suffix = " ms"
+
+[node name="Spacer" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BackButton" type="Button" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+text = "Back"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+text = "Start"
+
+[node name="Spacer2" type="Control" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(120, 50)
+layout_mode = 2
+text = "Save"
+
+[node name="MetronomePlayer" type="AudioStreamPlayer" parent="."]

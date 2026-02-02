@@ -1,0 +1,147 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/results.gd" id="1_results"]
+
+[node name="Results" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_results")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Results"
+horizontal_alignment = 1
+
+[node name="SongName" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "Song Name"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ScoreContainer" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ScoreLabel" type="Label" parent="VBoxContainer/ScoreContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
+text = "0"
+horizontal_alignment = 1
+
+[node name="ComboLabel" type="Label" parent="VBoxContainer/ScoreContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Max Combo: 0"
+horizontal_alignment = 1
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="StatsGrid" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="PerfectLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.2, 1)
+text = "Perfect:"
+
+[node name="PerfectValue" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.2, 1)
+text = "0"
+horizontal_alignment = 2
+
+[node name="GreatLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+text = "Great:"
+
+[node name="GreatValue" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+text = "0"
+horizontal_alignment = 2
+
+[node name="GoodLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.2, 1)
+text = "Good:"
+
+[node name="GoodValue" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0.2, 1)
+text = "0"
+horizontal_alignment = 2
+
+[node name="MissLabel" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+text = "Miss:"
+
+[node name="MissValue" type="Label" parent="VBoxContainer/StatsGrid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.2, 0.2, 1)
+text = "0"
+horizontal_alignment = 2
+
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="AccuracyLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Accuracy: 0%"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="RetryButton" type="Button" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Retry"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="MenuButton" type="Button" parent="VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Song List"
