@@ -6,6 +6,8 @@ This is a **Godot 4.6 web game** - a rhythm game for drum practice. Users upload
 
 **Full documentation:** See `docs/AI_ASSISTANT_GUIDE.md` for comprehensive details.
 
+**Keyboard controls (8 lanes):** A=Kick, S=Snare, D=Hi-Hat, F=High Tom, G=Mid Tom, H=Floor Tom, J=Crash, K=Ride
+
 ## Project Structure
 
 ```
@@ -15,7 +17,11 @@ drumalong/
 │   ├── scripts/autoload/     # Global singletons
 │   ├── js/                   # JavaScript bridges for web APIs
 │   └── build/web/            # Exported web build
+├── server/                   # Stem separation server (Docker)
 ├── docs/                     # Documentation
+│   ├── AI_ASSISTANT_GUIDE.md # Comprehensive implementation guide
+│   ├── FUTURE_FEATURES.md    # Feature ideas and roadmap
+│   └── plans/                # Design documents
 ├── export_web.sh             # Build script
 └── serve_on_port.sh          # Dev server
 ```
@@ -82,9 +88,13 @@ Defined in `project.godot`, available everywhere:
 
 ## Current Status
 
-MVP complete with these enhancement features:
+MVP complete with these features:
 - Count-in metronome at detected song tempo
 - Timeline seeking (clickable progress bar) and restart
 - Tempo adjustment (0.25x to 2.0x playback speed)
+- Keyboard fallback for testing without MIDI drums
+- Web MIDI input from electronic drum kits
 
-See `docs/AI_ASSISTANT_GUIDE.md` for full roadmap and technical details.
+**Next:** Stem separation server for improved onset detection accuracy.
+
+See `docs/AI_ASSISTANT_GUIDE.md` for technical details and `docs/FUTURE_FEATURES.md` for roadmap.

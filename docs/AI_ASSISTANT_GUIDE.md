@@ -98,11 +98,11 @@ drumalong/
 ### Core MVP
 - [x] File upload (MP3, WAV, OGG, M4A, FLAC)
 - [x] Client-side onset detection with energy-based algorithm
-- [x] Full drum kit classification (6 lanes: kick, snare, hi-hat, tom, crash, ride)
+- [x] Full drum kit classification (8 lanes: kick, snare, hi-hat, high tom, mid tom, floor tom, crash, ride)
 - [x] Rhythm game lane display with scrolling notes
 - [x] Audio playback synced with note display
 - [x] Web MIDI input from electronic drums
-- [x] Keyboard fallback input (A=kick, S=snare, D=hi-hat, F=tom, G=crash, H=ride)
+- [x] Keyboard fallback input (A=kick, S=snare, D=hi-hat, F=high tom, G=mid tom, H=floor tom, J=crash, K=ride)
 - [x] Timing-based scoring (Perfect/Great/Good/Miss)
 - [x] Combo system with multiplier
 - [x] Results screen with accuracy breakdown
@@ -137,12 +137,14 @@ const minOnsetGap = 50;   // Minimum ms between detected onsets
 
 ```javascript
 const DRUM_BANDS = {
-    kick:   { low: 20,   high: 100 },    // Deep bass
-    snare:  { low: 150,  high: 400 },    // Mid frequencies
-    hihat:  { low: 6000, high: 12000 },  // Very high frequencies
-    tom:    { low: 80,   high: 400 },    // Low-mid frequencies
-    crash:  { low: 3000, high: 8000 },   // High frequencies, wide spread
-    ride:   { low: 4000, high: 10000 }   // Sustained high-mid
+    kick:      { low: 20,   high: 100 },    // Deep bass
+    snare:     { low: 150,  high: 400 },    // Mid frequencies
+    hihat:     { low: 6000, high: 12000 },  // Very high frequencies
+    high_tom:  { low: 200,  high: 500 },    // Higher tom frequencies
+    mid_tom:   { low: 120,  high: 350 },    // Mid tom frequencies
+    floor_tom: { low: 80,   high: 250 },    // Lower tom frequencies
+    crash:     { low: 3000, high: 8000 },   // High frequencies, wide spread
+    ride:      { low: 4000, high: 10000 }   // Sustained high-mid
 };
 ```
 
@@ -158,15 +160,17 @@ Miss:    >150ms → 0 points, breaks combo
 
 ### MIDI Drum Mapping (midi_input.gd)
 
-Uses General MIDI drum standard:
+Uses General MIDI drum standard (8 lanes):
 ```gdscript
 # Note → Lane mapping
 36 (Kick) → Lane 0
 38, 40 (Snare) → Lane 1
 42, 44, 46 (Hi-Hat) → Lane 2
-41, 43, 45, 47, 48, 50 (Toms) → Lane 3
-49, 52, 55, 57 (Crash) → Lane 4
-51, 53, 59 (Ride) → Lane 5
+48, 50 (High Tom) → Lane 3
+45, 47 (Mid Tom) → Lane 4
+41, 43 (Floor Tom) → Lane 5
+49, 52, 55, 57 (Crash) → Lane 6
+51, 53, 59 (Ride) → Lane 7
 ```
 
 ### Web Audio Playback (audio_manager.gd)
