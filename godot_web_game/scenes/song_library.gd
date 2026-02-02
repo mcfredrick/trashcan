@@ -4,6 +4,8 @@ signal song_selected(song_data: Dictionary)
 
 var songs: Array = []
 var _js_callback: JavaScriptObject = null
+var _midi_callback: JavaScriptObject = null
+var _pending_midi_song_id: String = ""
 
 func _ready():
 	$MarginContainer/VBoxContainer/Header/BackButton.pressed.connect(_on_back_pressed)
@@ -19,6 +21,10 @@ func _setup_web_callbacks():
 	# Create callback for when file processing is complete
 	_js_callback = JavaScriptBridge.create_callback(_on_web_file_processed)
 	JavaScriptBridge.get_interface("window").drumalong_godot_callback = _js_callback
+
+	# Create callback for MIDI upload
+	_midi_callback = JavaScriptBridge.create_callback(_on_midi_upload_complete)
+	JavaScriptBridge.get_interface("window").drumalong_midi_callback = _midi_callback
 
 func _on_back_pressed():
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")
@@ -85,6 +91,11 @@ func _on_web_file_processed(args):
 			var song_data = JSON.parse_string(data)
 			if song_data:
 				_add_song(song_data)
+		"songs_loaded":
+			var loaded_songs = JSON.parse_string(data)
+			if loaded_songs:
+				songs = loaded_songs
+				_refresh_song_list()
 		"error":
 			_update_status("Error: " + data)
 			push_error("File upload error: " + data)
@@ -238,7 +249,9 @@ func _create_song_item(song_data: Dictionary) -> Control:
 	info_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var name_label = Label.new()
-	name_label.text = song_data.get("name", "Unknown")
+	var has_midi = song_data.get("midiSource") == "user"
+	var midi_indicator = " [MIDI]" if has_midi else ""
+	name_label.text = song_data.get("name", "Unknown") + midi_indicator
 	name_label.add_theme_font_size_override("font_size", 18)
 	info_container.add_child(name_label)
 
@@ -254,6 +267,16 @@ func _create_song_item(song_data: Dictionary) -> Control:
 	info_container.add_child(details_label)
 
 	container.add_child(info_container)
+
+	# Add MIDI button (web only)
+	if OS.has_feature("web"):
+		var midi_button = Button.new()
+		midi_button.text = "MIDI" if has_midi else "Add MIDI"
+		midi_button.custom_minimum_size = Vector2(90, 40)
+		midi_button.pressed.connect(_on_add_midi_pressed.bind(song_data))
+		if has_midi:
+			midi_button.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+		container.add_child(midi_button)
 
 	var play_button = Button.new()
 	play_button.text = "Play"
@@ -282,6 +305,77 @@ func _on_delete_song(song_data: Dictionary):
 	songs.erase(song_data)
 	_refresh_song_list()
 	_save_songs()
+
+func _on_add_midi_pressed(song_data: Dictionary):
+	_pending_midi_song_id = song_data.get("id", "")
+	_update_status("Select MIDI file...")
+
+	var js_code = """
+	(async function() {
+		try {
+			const result = await window.drumalong.triggerMidiUpload();
+			window.drumalong_midi_callback('success', JSON.stringify(result));
+		} catch (err) {
+			window.drumalong_midi_callback('error', err.message);
+		}
+	})();
+	"""
+	JavaScriptBridge.eval(js_code)
+
+func _on_midi_upload_complete(args):
+	var event_type = args[0]
+	var data = args[1] if args.size() > 1 else ""
+
+	if event_type == "error":
+		_update_status("Error: " + data)
+		_pending_midi_song_id = ""
+		return
+
+	if event_type != "success":
+		return
+
+	var result = JSON.parse_string(data)
+	if not result:
+		_update_status("Error: Failed to parse MIDI result")
+		_pending_midi_song_id = ""
+		return
+
+	var drum_count = result.get("drumNoteCount", 0)
+	if drum_count == 0:
+		_update_status("No drum notes found in MIDI file")
+		_pending_midi_song_id = ""
+		return
+
+	# Update song in database and local list
+	var onsets = result.get("onsets", [])
+	_update_status("Updating song with %d drum notes..." % drum_count)
+
+	var song_id = _pending_midi_song_id
+	_pending_midi_song_id = ""
+
+	# Update in IndexedDB
+	var js_code = """
+	(async function() {
+		try {
+			const onsets = %s;
+			await window.drumalong_db.updateSongOnsets('%s', onsets, 'user');
+			window.drumalong_midi_callback('updated', '');
+		} catch (err) {
+			window.drumalong_midi_callback('error', err.message);
+		}
+	})();
+	""" % [JSON.stringify(onsets), song_id]
+	JavaScriptBridge.eval(js_code)
+
+	# Update local song data
+	for i in range(songs.size()):
+		if songs[i].get("id") == song_id:
+			songs[i]["onsets"] = onsets
+			songs[i]["midiSource"] = "user"
+			break
+
+	_refresh_song_list()
+	_update_status("MIDI loaded: %d drum notes" % drum_count)
 
 func _update_status(text: String):
 	$MarginContainer/VBoxContainer/UploadSection/UploadStatus.text = text

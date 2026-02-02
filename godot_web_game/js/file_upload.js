@@ -9,6 +9,7 @@
     const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
     const SUPPORTED_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/x-flac', 'audio/mp4', 'audio/x-m4a', 'audio/aac'];
     const SUPPORTED_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac'];
+    const MIDI_EXTENSIONS = ['.mid', '.midi', '.smf', '.kar'];
 
     // Store for pending file data
     window.drumalong = window.drumalong || {};
@@ -226,6 +227,60 @@
     window.drumalong.clearAudio = function() {
         window.drumalong.pendingFile = null;
         window.drumalong.decodedBuffer = null;
+    };
+
+    /**
+     * Trigger MIDI file upload dialog
+     * @returns {Promise<Object>} Parsed MIDI data with onsets, bpm, drumNoteCount
+     */
+    window.drumalong.triggerMidiUpload = function() {
+        return new Promise((resolve, reject) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = MIDI_EXTENSIONS.join(',');
+
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    reject(new Error('No file selected'));
+                    return;
+                }
+
+                // Validate extension
+                const ext = '.' + file.name.split('.').pop().toLowerCase();
+                if (!MIDI_EXTENSIONS.includes(ext)) {
+                    reject(new Error(`Unsupported file type. Supported: ${MIDI_EXTENSIONS.join(', ')}`));
+                    return;
+                }
+
+                // Read and parse MIDI file
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    try {
+                        const result = window.drumalong_midi_parser.parse(e.target.result);
+                        resolve({
+                            filename: file.name,
+                            ...result
+                        });
+                    } catch (err) {
+                        reject(new Error('Failed to parse MIDI file: ' + err.message));
+                    }
+                };
+
+                reader.onerror = function() {
+                    reject(new Error('Failed to read MIDI file'));
+                };
+
+                reader.readAsArrayBuffer(file);
+            };
+
+            input.oncancel = function() {
+                reject(new Error('File selection cancelled'));
+            };
+
+            input.click();
+        });
     };
 
     console.log('DrumAlong file upload bridge loaded');

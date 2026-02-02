@@ -131,6 +131,55 @@
     }
 
     /**
+     * Update a song's onsets (e.g., from MIDI upload)
+     * @param {string} id - Song ID
+     * @param {Array} onsets - New onset data
+     * @param {string|null} midiSource - Source of onsets ('user' for MIDI upload, null for detected)
+     * @returns {Promise<Object>} Updated song data
+     */
+    async function updateSongOnsets(id, onsets, midiSource = null) {
+        const database = await initDB();
+
+        return new Promise((resolve, reject) => {
+            const transaction = database.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+
+            // First get the existing song
+            const getRequest = store.get(id);
+
+            getRequest.onsuccess = () => {
+                const song = getRequest.result;
+                if (!song) {
+                    reject(new Error('Song not found: ' + id));
+                    return;
+                }
+
+                // Update onsets and midiSource
+                song.onsets = onsets;
+                song.midiSource = midiSource;
+
+                // Save back
+                const putRequest = store.put(song);
+
+                putRequest.onsuccess = () => {
+                    console.log('Song onsets updated:', id);
+                    resolve(song);
+                };
+
+                putRequest.onerror = () => {
+                    console.error('Failed to update song:', putRequest.error);
+                    reject(putRequest.error);
+                };
+            };
+
+            getRequest.onerror = () => {
+                console.error('Failed to get song:', getRequest.error);
+                reject(getRequest.error);
+            };
+        });
+    }
+
+    /**
      * Delete a song by ID
      * @param {string} id - Song ID
      * @returns {Promise<void>}
@@ -234,6 +283,7 @@
         saveSong,
         getSong,
         getAllSongs,
+        updateSongOnsets,
         deleteSong,
         clearAllSongs,
         getStorageInfo,
