@@ -3,12 +3,14 @@
 
 # Godot-specific ignores
 *.translation
+*.import
 
 # Imported textures and samples
 .import/
 
 # Build outputs
-godot_web_game/build/
+**/build/
+export.cfg
 
 # Export templates (large binary files)
 export_templates/
@@ -25,9 +27,24 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+*.sublime-workspace
+*.sublime-project
 *.swp
 *.swo
 *~
+*#
+
+# Logs
+*.log
+export.log
+export_verbose.log
+
+# Local development
+.env
+*.local
 
 # Claude
 .claude/
+
+# Template specific
+.copier-answers.yml
