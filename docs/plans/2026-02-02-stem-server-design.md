@@ -5,7 +5,11 @@
 
 ## Overview
 
-A Dockerized server that uses Spleeter to isolate drum stems from uploaded audio, then runs onset detection on the isolated drums for more accurate transcription. Results are cached by audio hash to avoid reprocessing.
+A Dockerized server that uses Demucs to isolate drum stems from uploaded audio, then runs YODO (YOLOv4-based drum transcription) on the isolated drums for accurate transcription. Results are cached by audio hash to avoid reprocessing.
+
+**Key Libraries:**
+- [Demucs](https://github.com/facebookresearch/demucs) (MIT) - Facebook's state-of-the-art music source separation
+- [YODO](https://github.com/varsaav/yodo) (MIT) - YOLOv4-based automatic drum transcription
 
 ## Architecture
 
@@ -21,8 +25,8 @@ A Dockerized server that uses Spleeter to isolate drum stems from uploaded audio
 ┌─────────────────────────────────────────────────────────────────┐
 │                  Docker Container                                │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   FastAPI   │  │   Spleeter  │  │  Onset Detection        │  │
-│  │  + WebSocket│  │   (2-stem)  │  │  (Python port of JS)    │  │
+│  │   FastAPI   │  │   Demucs    │  │  YODO                   │  │
+│  │  + WebSocket│  │  (htdemucs) │  │  (YOLOv4 transcription) │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │                                                                  │
 │  ┌─────────────┐  ┌─────────────────────────────────────────┐   │
@@ -38,8 +42,8 @@ A Dockerized server that uses Spleeter to isolate drum stems from uploaded audio
 
 | Component | Decision | Rationale |
 |-----------|----------|-----------|
-| Stem separation | Spleeter (2-stem) | Proven, fast, isolates drums well |
-| Onset detection | Python port of current JS | Consistency with client-side fallback |
+| Stem separation | Demucs (htdemucs) | State-of-the-art quality, MIT license, recommended by YODO |
+| Drum transcription | YODO | YOLOv4-based, recognizes 11 drums, MIT license |
 | Database | SQLite | Simple, portable, no extra container |
 | API framework | FastAPI | Async, WebSocket support, auto-docs |
 | File storage | Docker volume | Simple, persistent, easy to inspect |
@@ -161,15 +165,15 @@ async def process_audio(file_path: str, job_id: str, ws_manager):
         await ws_manager.send(job_id, stage="complete", cached=True)
         return existing
 
-    # 3. Spleeter stem separation (10-70%)
+    # 3. Demucs stem separation (10-50%)
     await ws_manager.send(job_id, stage="separating", progress=10)
-    drum_path = await run_spleeter(file_path, audio_hash)
+    drum_path = await run_demucs(file_path, audio_hash)
 
-    # 4. Onset detection on drum stem (70-90%)
-    await ws_manager.send(job_id, stage="transcribing", progress=70)
-    onsets, bpm = await detect_onsets(drum_path)
+    # 4. YODO drum transcription (50-90%)
+    await ws_manager.send(job_id, stage="transcribing", progress=50)
+    onsets, bpm = await run_yodo(drum_path)
 
-    # 5. Generate MIDI from onsets (90-95%)
+    # 5. Generate MIDI from transcription (90-95%)
     await ws_manager.send(job_id, stage="saving", progress=90)
     midi_path = generate_midi(onsets, bpm, audio_hash)
 
@@ -196,8 +200,9 @@ server/
 │   └── processing/
 │       ├── __init__.py
 │       ├── hasher.py
-│       ├── separator.py
-│       ├── onset_detection.py
+│       ├── demucs_separator.py
+│       ├── yodo_transcriber.py
+│       ├── onset_detection.py   # Fallback: energy-based detection
 │       └── midi_writer.py
 ├── migrations/
 │   ├── __init__.py
@@ -205,7 +210,7 @@ server/
 │   └── 001_initial.sql
 ├── tests/
 │   ├── conftest.py
-│   ├── test_onset_detection.py
+│   ├── test_transcription.py
 │   ├── test_api.py
 │   └── fixtures/
 └── scripts/
@@ -281,6 +286,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsndfile1 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -288,10 +294,16 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install YODO from GitHub
+RUN pip install git+https://github.com/varsaav/yodo.git
+
 COPY . .
 
-# Pre-download Spleeter model
-RUN python -c "from spleeter.separator import Separator; Separator('spleeter:2stems')"
+# Pre-download Demucs model (htdemucs is the default high-quality model)
+RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs')"
+
+# Pre-download YODO model weights
+RUN python -c "from yodo import download_weights; download_weights()"
 
 EXPOSE 8000
 
@@ -333,3 +345,22 @@ func _ready():
 ```
 
 If the server is unavailable, the client uses the existing client-side onset detection as a fallback.
+
+## Transcription Approaches
+
+**Primary: YODO (YOLOv4-based)**
+- Recognizes 11 drum sounds via object detection on spectrograms
+- Trained on Extended Groove MIDI Dataset (199k+ spectrograms)
+- Uses Superlet Transform for spectrogram generation
+- Note: Trained on unprocessed e-drum recordings; may have reduced accuracy with heavily processed audio
+
+**Fallback: Energy-based onset detection**
+- Port of the client-side JavaScript onset detection
+- Uses FFT frequency bands to classify drum types
+- Less accurate but simpler and faster
+- Use if YODO proves unreliable for certain audio types
+
+Configuration option to switch between approaches via environment variable:
+```
+TRANSCRIPTION_METHOD=yodo  # or "onset_detection"
+```

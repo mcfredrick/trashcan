@@ -4,10 +4,10 @@ This document tracks feature ideas for future development.
 
 ## Planned / In Design
 
-### Stem Separation Server
+### Drum Transcription Server
 **Status:** Design complete, **implement next**
 
-Server-side drum stem isolation using Spleeter for improved onset detection accuracy. See [design document](plans/2026-02-02-stem-server-design.md).
+Server-side drum transcription using Demucs (stem separation) + YODO (YOLOv4-based transcription). See [design document](plans/2026-02-02-stem-server-design.md).
 
 ---
 
@@ -28,7 +28,9 @@ Server-side drum stem isolation using Spleeter for improved onset detection accu
 
 ### Audio & Analysis
 
-- [ ] **ML-based drum transcription** - Replace frequency-band classification with a proper ML model (e.g., Magenta's Onsets and Frames, or a custom CNN) running on the stem server. Current FFT-based approach is unreliable for distinguishing kick vs floor tom, etc.
+- [ ] **Alternative transcription models** - If YODO doesn't perform well, evaluate alternatives:
+  - Magenta's Onsets and Frames
+  - Custom CNN trained on isolated drum stems
 - [ ] **Madmom integration** - ML-based onset detection for better accuracy
 - [ ] **YouTube URL input** - Extract and analyze audio from YouTube videos
 - [ ] **Spotify integration** - Import songs from Spotify
