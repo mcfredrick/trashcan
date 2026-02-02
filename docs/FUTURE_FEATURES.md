@@ -4,13 +4,8 @@ This document tracks feature ideas for future development.
 
 ## Planned / In Design
 
-### 8-Lane Tom Expansion
-**Status:** Design complete, **implement next**
-
-Expand from 6 lanes to 8 lanes by splitting the single "Tom" lane into High Tom, Mid Tom, and Floor Tom. See [design document](plans/2026-02-02-8-lane-tom-expansion.md).
-
 ### Stem Separation Server
-**Status:** Design complete, implement after tom expansion
+**Status:** Design complete, **implement next**
 
 Server-side drum stem isolation using Spleeter for improved onset detection accuracy. See [design document](plans/2026-02-02-stem-server-design.md).
 
@@ -33,6 +28,7 @@ Server-side drum stem isolation using Spleeter for improved onset detection accu
 
 ### Audio & Analysis
 
+- [ ] **ML-based drum transcription** - Replace frequency-band classification with a proper ML model (e.g., Magenta's Onsets and Frames, or a custom CNN) running on the stem server. Current FFT-based approach is unreliable for distinguishing kick vs floor tom, etc.
 - [ ] **Madmom integration** - ML-based onset detection for better accuracy
 - [ ] **YouTube URL input** - Extract and analyze audio from YouTube videos
 - [ ] **Spotify integration** - Import songs from Spotify
@@ -61,10 +57,11 @@ Server-side drum stem isolation using Spleeter for improved onset detection accu
 
 ## Completed Features
 
+- [x] **8-lane tom expansion** - Separate lanes for High Tom, Mid Tom, and Floor Tom (8 total lanes)
 - [x] **Count-in metronome** - Tempo-synced countdown before song starts
 - [x] **Timeline seeking** - Click progress bar to seek, restart button
 - [x] **Tempo adjustment** - Playback speed from 0.25x to 2.0x
-- [x] **Keyboard fallback input** - A=Kick, S=Snare, D=Hi-Hat, F=Tom, G=Crash, H=Ride
+- [x] **Keyboard fallback input** - A=Kick, S=Snare, D=Hi-Hat, F=High Tom, G=Mid Tom, H=Floor Tom, J=Crash, K=Ride
 - [x] **IndexedDB persistence** - Songs saved locally for replay without re-upload
 
 ---

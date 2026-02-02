@@ -9,27 +9,27 @@
     // Standard General MIDI drum note mappings
     // These are common but may vary by manufacturer
     const GM_DRUM_MAP = {
-        36: 'kick',      // Bass Drum 1
-        35: 'kick',      // Acoustic Bass Drum
-        38: 'snare',     // Acoustic Snare
-        40: 'snare',     // Electric Snare
-        37: 'snare',     // Side Stick
-        42: 'hihat',     // Closed Hi-Hat
-        44: 'hihat',     // Pedal Hi-Hat
-        46: 'hihat',     // Open Hi-Hat
-        41: 'tom',       // Low Floor Tom
-        43: 'tom',       // High Floor Tom
-        45: 'tom',       // Low Tom
-        47: 'tom',       // Low-Mid Tom
-        48: 'tom',       // Hi-Mid Tom
-        50: 'tom',       // High Tom
-        49: 'crash',     // Crash Cymbal 1
-        57: 'crash',     // Crash Cymbal 2
-        55: 'crash',     // Splash Cymbal
-        52: 'crash',     // Chinese Cymbal
-        51: 'ride',      // Ride Cymbal 1
-        59: 'ride',      // Ride Cymbal 2
-        53: 'ride',      // Ride Bell
+        36: 'kick',       // Bass Drum 1
+        35: 'kick',       // Acoustic Bass Drum
+        38: 'snare',      // Acoustic Snare
+        40: 'snare',      // Electric Snare
+        37: 'snare',      // Side Stick
+        42: 'hihat',      // Closed Hi-Hat
+        44: 'hihat',      // Pedal Hi-Hat
+        46: 'hihat',      // Open Hi-Hat
+        48: 'high_tom',   // Hi-Mid Tom
+        50: 'high_tom',   // High Tom
+        45: 'mid_tom',    // Low Tom
+        47: 'mid_tom',    // Low-Mid Tom
+        41: 'floor_tom',  // Low Floor Tom
+        43: 'floor_tom',  // High Floor Tom
+        49: 'crash',      // Crash Cymbal 1
+        57: 'crash',      // Crash Cymbal 2
+        55: 'crash',      // Splash Cymbal
+        52: 'crash',      // Chinese Cymbal
+        51: 'ride',       // Ride Cymbal 1
+        59: 'ride',       // Ride Cymbal 2
+        53: 'ride',       // Ride Bell
     };
 
     // Lane indices matching Godot gameplay
@@ -37,9 +37,11 @@
         'kick': 0,
         'snare': 1,
         'hihat': 2,
-        'tom': 3,
-        'crash': 4,
-        'ride': 5
+        'high_tom': 3,
+        'mid_tom': 4,
+        'floor_tom': 5,
+        'crash': 6,
+        'ride': 7
     };
 
     // State

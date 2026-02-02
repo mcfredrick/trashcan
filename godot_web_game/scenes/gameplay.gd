@@ -1,11 +1,13 @@
 extends Control
 
-const LANE_NAMES = ["Kick", "Snare", "Hi-Hat", "Tom", "Crash", "Ride"]
+const LANE_NAMES = ["Kick", "Snare", "Hi-Hat", "High Tom", "Mid Tom", "Floor Tom", "Crash", "Ride"]
 const LANE_COLORS = [
 	Color(0.8, 0.2, 0.2),  # Kick - Red
 	Color(0.9, 0.9, 0.2),  # Snare - Yellow
 	Color(0.2, 0.8, 0.2),  # Hi-Hat - Green
-	Color(0.2, 0.6, 0.9),  # Tom - Blue
+	Color(0.2, 0.6, 0.9),  # High Tom - Blue
+	Color(0.2, 0.8, 0.8),  # Mid Tom - Cyan
+	Color(0.4, 0.4, 0.9),  # Floor Tom - Indigo
 	Color(0.9, 0.5, 0.1),  # Crash - Orange
 	Color(0.7, 0.3, 0.9),  # Ride - Purple
 ]
@@ -48,7 +50,7 @@ func _on_midi_drum_hit(lane: int, velocity: int, _timestamp: float):
 
 func _setup_lanes():
 	var lane_container = $LaneContainer/Lanes
-	for i in range(6):
+	for i in range(8):
 		var lane = _create_lane(i)
 		lane_container.add_child(lane)
 		lanes.append(lane)
@@ -91,8 +93,8 @@ func _generate_demo_notes():
 	for i in range(50):
 		var note = {
 			"time": 2.0 + i * 0.5,
-			"lane": randi() % 6,
-			"type": LANE_NAMES[randi() % 6].to_lower()
+			"lane": randi() % 8,
+			"type": LANE_NAMES[randi() % 8].to_lower().replace(" ", "_")
 		}
 		pending_notes.append(note)
 
@@ -211,8 +213,8 @@ func _update_notes(delta):
 		active_notes.erase(note)
 
 func _check_input():
-	for i in range(6):
-		var action_name = "drum_" + LANE_NAMES[i].to_lower().replace("-", "")
+	for i in range(8):
+		var action_name = "drum_" + LANE_NAMES[i].to_lower().replace("-", "").replace(" ", "")
 		if Input.is_action_just_pressed(action_name):
 			_handle_drum_hit(i)
 

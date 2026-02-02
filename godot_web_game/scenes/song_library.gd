@@ -147,12 +147,14 @@ func _generate_placeholder_onsets(duration: float) -> Array:
 	var time = 1.0
 	var rng = RandomNumberGenerator.new()
 	rng.seed = hash(duration)
+	var drum_types = ["kick", "snare", "hihat", "high_tom", "mid_tom", "floor_tom", "crash", "ride"]
 
 	while time < duration - 1.0:
+		var lane = rng.randi() % 8
 		onsets.append({
 			"time": time,
-			"lane": rng.randi() % 6,
-			"type": ["kick", "snare", "hihat", "tom", "crash", "ride"][rng.randi() % 6]
+			"lane": lane,
+			"type": drum_types[lane]
 		})
 		time += 0.25 + rng.randf() * 0.5
 

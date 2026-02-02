@@ -4,7 +4,7 @@ signal midi_connected(device_name: String)
 signal midi_disconnected(device_name: String)
 signal drum_hit(lane: int, velocity: int, timestamp: float)
 
-const DRUM_NAMES = ["kick", "snare", "hihat", "tom", "crash", "ride"]
+const DRUM_NAMES = ["kick", "snare", "hihat", "hightom", "midtom", "floortom", "crash", "ride"]
 
 var _js_callback: JavaScriptObject = null
 var _is_initialized: bool = false
@@ -61,7 +61,7 @@ func _on_midi_event(args):
 			var velocity = data.get("velocity", 0)
 			var timestamp = data.get("timestamp", 0.0)
 
-			if lane >= 0 and lane < 6:
+			if lane >= 0 and lane < 8:
 				drum_hit.emit(lane, velocity, timestamp)
 				# Also trigger the input action for compatibility
 				_trigger_drum_action(lane)

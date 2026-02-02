@@ -8,12 +8,15 @@
 
     // Frequency bands for drum classification (Hz)
     const DRUM_BANDS = {
-        kick:   { low: 20,   high: 100,  name: 'kick' },
-        snare:  { low: 150,  high: 400,  name: 'snare' },
-        hihat:  { low: 6000, high: 12000, name: 'hihat' },
-        tom:    { low: 80,   high: 400,  name: 'tom' },
-        crash:  { low: 3000, high: 8000, name: 'crash' },
-        ride:   { low: 4000, high: 10000, name: 'ride' }
+        sub_bass:  { low: 20,   high: 60,   name: 'sub_bass' },  // Kick-specific sub-bass
+        kick:      { low: 20,   high: 100,  name: 'kick' },
+        snare:     { low: 150,  high: 400,  name: 'snare' },
+        hihat:     { low: 6000, high: 12000, name: 'hihat' },
+        high_tom:  { low: 200,  high: 500,  name: 'high_tom' },
+        mid_tom:   { low: 120,  high: 350,  name: 'mid_tom' },
+        floor_tom: { low: 100,  high: 250,  name: 'floor_tom' },  // Start at 100 to reduce kick overlap
+        crash:     { low: 3000, high: 8000, name: 'crash' },
+        ride:      { low: 4000, high: 10000, name: 'ride' }
     };
 
     // Lane indices matching Godot gameplay
@@ -21,9 +24,11 @@
         'kick': 0,
         'snare': 1,
         'hihat': 2,
-        'tom': 3,
-        'crash': 4,
-        'ride': 5
+        'high_tom': 3,
+        'mid_tom': 4,
+        'floor_tom': 5,
+        'crash': 6,
+        'ride': 7
     };
 
     /**
@@ -120,9 +125,13 @@
         }
 
         // Decision tree for classification
-        // Kick: dominant low frequency
-        if (bandEnergies.kick > 0.6 && bandEnergies.kick > bandEnergies.snare * 1.5) {
-            return 'kick';
+        // Kick: strong sub-bass content (20-60 Hz) distinguishes from floor tom
+        // Kicks have dominant sub-bass, floor toms have more energy in 100-250 Hz range
+        if (bandEnergies.kick > 0.5 && bandEnergies.sub_bass > 0.4) {
+            // Strong sub-bass = kick, not floor tom
+            if (bandEnergies.sub_bass > bandEnergies.floor_tom * 0.8) {
+                return 'kick';
+            }
         }
 
         // Hi-hat: very high frequency dominant
@@ -140,11 +149,22 @@
             return 'ride';
         }
 
-        // Tom: mid frequencies
-        if (bandEnergies.tom > 0.5 && bandEnergies.tom > bandEnergies.snare * 0.9) {
-            // Distinguish tom from kick by checking if there's also high frequency content
-            if (bandEnergies.kick < bandEnergies.tom * 0.7) {
-                return 'tom';
+        // Classify toms by frequency - higher frequencies = higher toms
+        const tomEnergy = bandEnergies.high_tom + bandEnergies.mid_tom + bandEnergies.floor_tom;
+        if (tomEnergy > 0.4 && tomEnergy > bandEnergies.snare * 0.8) {
+            // Reject if sub-bass is dominant (that's a kick, not a tom)
+            if (bandEnergies.sub_bass < tomEnergy * 0.6) {
+                // Determine which tom based on relative band energies
+                if (bandEnergies.high_tom >= bandEnergies.mid_tom && bandEnergies.high_tom >= bandEnergies.floor_tom) {
+                    return 'high_tom';
+                } else if (bandEnergies.mid_tom >= bandEnergies.floor_tom) {
+                    return 'mid_tom';
+                } else {
+                    return 'floor_tom';
+                }
+            } else {
+                // Sub-bass dominant with tom-range energy = still a kick
+                return 'kick';
             }
         }
 
