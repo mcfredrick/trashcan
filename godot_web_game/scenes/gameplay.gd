@@ -32,7 +32,11 @@ const SPAWN_AHEAD_TIME: float = 2.0  # Spawn notes 2 seconds before hit time
 
 func _ready():
 	$BottomBar/PauseButton.pressed.connect(_on_pause_pressed)
+	$BottomBar/RestartButton.pressed.connect(_on_restart_pressed)
 	$BottomBar/QuitButton.pressed.connect(_on_quit_pressed)
+	$BottomBar/Progress.gui_input.connect(_on_progress_input)
+	$BottomBar/SlowDownButton.pressed.connect(_on_slow_down_pressed)
+	$BottomBar/SpeedUpButton.pressed.connect(_on_speed_up_pressed)
 	MidiInput.drum_hit.connect(_on_midi_drum_hit)
 	_setup_lanes()
 	_load_song()
@@ -94,15 +98,36 @@ func _generate_demo_notes():
 
 func _start_countdown():
 	$CountdownLabel.visible = true
-	var countdown = 3
-	while countdown > 0:
-		$CountdownLabel.text = str(countdown)
-		await get_tree().create_timer(1.0).timeout
-		countdown -= 1
-	$CountdownLabel.text = "GO!"
+
+	var bpm = song_data.get("bpm", 120)
+	var beat_interval = 60.0 / bpm
+	var beats = 4
+
+	# Display BPM info
+	$CountdownLabel.text = str(bpm) + " BPM"
 	await get_tree().create_timer(0.5).timeout
+
+	# Play count-in with metronome
+	if OS.has_feature("web"):
+		_play_web_count_in(bpm, beats)
+
+	# Visual countdown synced to beat
+	for i in range(beats):
+		$CountdownLabel.text = str(beats - i)
+		# Flash the label
+		$CountdownLabel.modulate = Color.WHITE
+		var tween = create_tween()
+		tween.tween_property($CountdownLabel, "modulate", Color(1, 1, 1, 0.5), beat_interval * 0.8)
+		await get_tree().create_timer(beat_interval).timeout
+
+	$CountdownLabel.text = "GO!"
+	await get_tree().create_timer(0.3).timeout
 	$CountdownLabel.visible = false
 	_start_playing()
+
+func _play_web_count_in(bpm: int, beats: int):
+	var js_code = "window.drumalong_playCountIn(%d, %d);" % [bpm, beats]
+	JavaScriptBridge.eval(js_code)
 
 func _start_playing():
 	is_playing = true
@@ -296,6 +321,67 @@ func _on_pause_pressed():
 		AudioManager.pause()
 	else:
 		AudioManager.resume()
+
+func _on_restart_pressed():
+	_seek_to_position(0.0)
+
+func _on_progress_input(event: InputEvent):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var progress_bar = $BottomBar/Progress
+		var click_ratio = event.position.x / progress_bar.size.x
+		var duration = song_data.get("duration", 60.0)
+		var seek_time = click_ratio * duration
+		_seek_to_position(seek_time)
+
+func _seek_to_position(position: float):
+	var duration = song_data.get("duration", 60.0)
+	position = clamp(position, 0.0, duration)
+
+	# Stop audio and seek
+	AudioManager.seek(position)
+	song_time = position
+
+	# Clear all active notes
+	for note in active_notes:
+		if is_instance_valid(note):
+			note.queue_free()
+	active_notes.clear()
+
+	# Reset pending notes to include notes after the seek position
+	pending_notes = []
+	var all_onsets = song_data.get("onsets", [])
+	for onset in all_onsets:
+		if onset.time >= position - 0.5:  # Include notes slightly before for visual
+			pending_notes.append(onset.duplicate())
+
+	# Reset scoring for fair restart
+	if position == 0.0:
+		score = 0
+		combo = 0
+		max_combo = 0
+		hits_perfect = 0
+		hits_great = 0
+		hits_good = 0
+		hits_miss = 0
+
+	# Update UI
+	_update_ui()
+
+func _on_slow_down_pressed():
+	var current_rate = AudioManager.get_playback_rate()
+	var new_rate = max(0.25, current_rate - 0.25)
+	AudioManager.set_playback_rate(new_rate)
+	_update_speed_label()
+
+func _on_speed_up_pressed():
+	var current_rate = AudioManager.get_playback_rate()
+	var new_rate = min(2.0, current_rate + 0.25)
+	AudioManager.set_playback_rate(new_rate)
+	_update_speed_label()
+
+func _update_speed_label():
+	var rate = AudioManager.get_playback_rate()
+	$BottomBar/SpeedLabel.text = "%.2fx" % rate
 
 func _on_quit_pressed():
 	AudioManager.stop()

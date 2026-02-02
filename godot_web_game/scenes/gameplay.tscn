@@ -124,6 +124,11 @@ custom_minimum_size = Vector2(100, 50)
 layout_mode = 2
 text = "Pause"
 
+[node name="RestartButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(100, 50)
+layout_mode = 2
+text = "Restart"
+
 [node name="Spacer" type="Control" parent="BottomBar"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -132,12 +137,30 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(400, 30)
 layout_mode = 2
 size_flags_vertical = 1
+mouse_filter = 0
+mouse_default_cursor_shape = 2
 value = 30.0
 show_percentage = false
 
 [node name="Spacer2" type="Control" parent="BottomBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="SpeedLabel" type="Label" parent="BottomBar"]
+layout_mode = 2
+text = "1.0x"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SlowDownButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+text = "-"
+
+[node name="SpeedUpButton" type="Button" parent="BottomBar"]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+text = "+"
 
 [node name="QuitButton" type="Button" parent="BottomBar"]
 custom_minimum_size = Vector2(100, 50)

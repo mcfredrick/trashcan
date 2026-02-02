@@ -45,12 +45,16 @@ func _trigger_web_file_upload():
 			const samples = window.drumalong.getAudioSamples(22050);
 			const onsets = window.drumalong_detectOnsets(samples, 22050);
 
+			window.drumalong_godot_callback('status', 'Detecting tempo...');
+			const bpm = window.drumalong_estimateTempo(onsets);
+
 			window.drumalong_godot_callback('status', 'Saving song...');
 			const songData = {
 				id: Date.now().toString(),
 				name: fileInfo.name.replace(/\\.[^/.]+$/, ''),
 				duration: audioInfo.duration,
 				sampleRate: audioInfo.sampleRate,
+				bpm: bpm,
 				onsets: onsets
 			};
 
@@ -239,9 +243,10 @@ func _create_song_item(song_data: Dictionary) -> Control:
 	var duration = song_data.get("duration", 0.0)
 	var duration_str = "%d:%02d" % [int(duration) / 60, int(duration) % 60]
 	var notes_count = song_data.get("onsets", []).size()
+	var bpm = song_data.get("bpm", 120)
 
 	var details_label = Label.new()
-	details_label.text = "%s | %d notes" % [duration_str, notes_count]
+	details_label.text = "%s | %d BPM | %d notes" % [duration_str, bpm, notes_count]
 	details_label.add_theme_font_size_override("font_size", 14)
 	details_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	info_container.add_child(details_label)

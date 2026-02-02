@@ -297,5 +297,127 @@
         return arr.reduce((a, b) => a + b, 0) / arr.length;
     }
 
+    /**
+     * Estimate tempo (BPM) from onset times
+     * @param {Array} onsets - Array of onset objects with time property (in seconds)
+     * @returns {number} Estimated BPM (or 120 as default)
+     */
+    window.drumalong_estimateTempo = function(onsets) {
+        if (!onsets || onsets.length < 4) {
+            return 120; // Default BPM
+        }
+
+        // Calculate inter-onset intervals (IOIs)
+        const iois = [];
+        for (let i = 1; i < onsets.length; i++) {
+            const ioi = onsets[i].time - onsets[i-1].time;
+            // Only consider reasonable intervals (50ms to 2s, i.e., 30-1200 BPM range)
+            if (ioi >= 0.05 && ioi <= 2.0) {
+                iois.push(ioi);
+            }
+        }
+
+        if (iois.length < 3) {
+            return 120;
+        }
+
+        // Build histogram of IOIs to find common intervals
+        // Quantize to 10ms bins
+        const histogram = {};
+        for (const ioi of iois) {
+            const bin = Math.round(ioi * 100) / 100; // Round to 10ms
+            histogram[bin] = (histogram[bin] || 0) + 1;
+        }
+
+        // Find peaks in histogram (common beat intervals)
+        const sortedBins = Object.entries(histogram)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        if (sortedBins.length === 0) {
+            return 120;
+        }
+
+        // Look for intervals that correspond to reasonable tempos (60-180 BPM)
+        // Beat interval = 60 / BPM, so BPM = 60 / interval
+        let bestInterval = parseFloat(sortedBins[0][0]);
+
+        // Check if the interval or its multiples/divisions give a reasonable BPM
+        const candidateIntervals = [
+            bestInterval,
+            bestInterval * 2,
+            bestInterval / 2,
+            bestInterval * 4,
+            bestInterval / 4
+        ];
+
+        for (const interval of candidateIntervals) {
+            const bpm = 60 / interval;
+            if (bpm >= 60 && bpm <= 180) {
+                console.log(`Estimated tempo: ${Math.round(bpm)} BPM`);
+                return Math.round(bpm);
+            }
+        }
+
+        // Fallback: use median IOI
+        iois.sort((a, b) => a - b);
+        const medianIoi = iois[Math.floor(iois.length / 2)];
+        const bpm = Math.round(60 / medianIoi);
+
+        // Clamp to reasonable range
+        const clampedBpm = Math.max(60, Math.min(180, bpm));
+        console.log(`Estimated tempo (fallback): ${clampedBpm} BPM`);
+        return clampedBpm;
+    };
+
+    /**
+     * Generate a metronome click sound
+     * @param {AudioContext} audioContext
+     * @param {number} time - When to play the click (AudioContext time)
+     * @param {boolean} accent - Whether this is an accented beat
+     */
+    window.drumalong_playClick = function(audioContext, time, accent = false) {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        // Higher pitch for accent
+        osc.frequency.value = accent ? 1000 : 800;
+        osc.type = 'sine';
+
+        // Short click envelope
+        const volume = accent ? 0.5 : 0.3;
+        gain.gain.setValueAtTime(volume, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+        osc.start(time);
+        osc.stop(time + 0.05);
+    };
+
+    /**
+     * Play a count-in metronome
+     * @param {number} bpm - Beats per minute
+     * @param {number} beats - Number of beats to play (default 4)
+     * @returns {Promise} Resolves when count-in is complete
+     */
+    window.drumalong_playCountIn = function(bpm, beats = 4) {
+        return new Promise((resolve) => {
+            const audioContext = window.drumalong.audioContext || new AudioContext();
+            const beatInterval = 60 / bpm;
+            const startTime = audioContext.currentTime + 0.1;
+
+            for (let i = 0; i < beats; i++) {
+                const isAccent = (i === 0); // Accent first beat
+                window.drumalong_playClick(audioContext, startTime + i * beatInterval, isAccent);
+            }
+
+            // Resolve after all beats have played
+            const totalDuration = beats * beatInterval * 1000;
+            setTimeout(resolve, totalDuration + 100);
+        });
+    };
+
     console.log('DrumAlong onset detection loaded');
 })();
