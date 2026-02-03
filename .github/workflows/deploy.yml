@@ -42,6 +42,9 @@ jobs:
       - name: Copy JavaScript files
         run: cp -r godot_web_game/js/* godot_web_game/build/web/
 
+      - name: Copy service worker to root
+        run: cp godot_web_game/js/sw.js godot_web_game/build/web/sw.js
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

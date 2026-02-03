@@ -119,6 +119,12 @@ const GODOT_CONFIG = $GODOT_CONFIG;
 const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
 const engine = new Engine(GODOT_CONFIG);
 
+// Configure for GitHub Pages compatibility
+if (GODOT_CONFIG && typeof GODOT_CONFIG === 'object') {
+	GODOT_CONFIG['serviceWorker'] = true;
+	GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] = true;
+}
+
 (function () {
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
@@ -171,28 +177,85 @@ const engine = new Engine(GODOT_CONFIG);
 	});
 
 	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			let serviceWorkerRegistrationPromise;
-			try {
-				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-			}
-			Promise.race([
-				serviceWorkerRegistrationPromise.then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
+		// Check if we're on GitHub Pages or similar platform without COI headers
+		const isGitHubPages = window.location.hostname === 'username.github.io' || 
+							  window.location.hostname.endsWith('.github.io') ||
+							  !window.crossOriginIsolated;
+		
+		if (isGitHubPages && missing.includes('SharedArrayBuffer')) {
+			// Try to reload with service worker for COI headers
+			if (GODOT_CONFIG['serviceWorker'] && 'serviceWorker' in navigator) {
+				let serviceWorkerRegistrationPromise;
+				try {
+					serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+				} catch (err) {
+					serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+				}
+				Promise.race([
+					serviceWorkerRegistrationPromise.then((registration) => {
+						if (registration != null) {
+							return Promise.reject(new Error('Service worker already exists.'));
+						}
+						return registration;
+					}).then(() => engine.installServiceWorker()),
+					new Promise((resolve) => {
+						setTimeout(() => resolve(), 2000);
+					}),
+				]).then(() => {
+					window.location.reload();
+				}).catch((err) => {
+					console.error('Error while registering service worker:', err);
+					// Fallback: disable threads and retry
+					GODOT_THREADS_ENABLED = false;
+					const missingWithoutThreads = Engine.getMissingFeatures({
+						threads: false,
+					});
+					if (missingWithoutThreads.length === 0) {
+						setStatusMode('progress');
+						engine.startGame({
+							'onProgress': function (current, total) {
+								if (current > 0 && total > 0) {
+									statusProgress.value = current;
+									statusProgress.max = total;
+								} else {
+									statusProgress.removeAttribute('value');
+									statusProgress.removeAttribute('max');
+								}
+							},
+						}).then(() => {
+							setStatusMode('hidden');
+						}, displayFailureNotice);
+					} else {
+						const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+						displayFailureNotice(missingMsg + missingWithoutThreads.join('\n') + '\n\nNote: Running on GitHub Pages without proper COI headers. Some features may be disabled.');
 					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).then(() => {
-				window.location.reload();
-			}).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			});
+				});
+			} else {
+				// Fallback: disable threads and try to run
+				GODOT_THREADS_ENABLED = false;
+				const missingWithoutThreads = Engine.getMissingFeatures({
+					threads: false,
+				});
+				if (missingWithoutThreads.length === 0) {
+					setStatusMode('progress');
+					engine.startGame({
+						'onProgress': function (current, total) {
+							if (current > 0 && total > 0) {
+								statusProgress.value = current;
+								statusProgress.max = total;
+							} else {
+								statusProgress.removeAttribute('value');
+								statusProgress.removeAttribute('max');
+							}
+						},
+					}).then(() => {
+						setStatusMode('hidden');
+					}, displayFailureNotice);
+				} else {
+					const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+					displayFailureNotice(missingMsg + missingWithoutThreads.join('\n') + '\n\nNote: Running on GitHub Pages without proper COI headers. Some features may be disabled.');
+				}
+			}
 		} else {
 			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
